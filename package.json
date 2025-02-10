@@ -1,0 +1,60 @@
+{
+  "name": "sshetty-amplify-vite-react-template",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "author": "Sachit Shetty",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "prepare": "husky",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.config.mjs",
+    "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
+    "lint:style": "stylelint \"**/*.{css,scss}\"",
+    "lint:style:fix": "stylelint \"**/*.{css,scss}\" --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-amplify/ui-react": "^6.5.5",
+    "aws-amplify": "^6.6.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@aws-amplify/backend": "^1.5.0",
+    "@aws-amplify/backend-cli": "^1.2.9",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.0.0",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "@vitejs/plugin-react-swc": "^3.7.2",
+    "aws-cdk": "^2.138.0",
+    "aws-cdk-lib": "^2.138.0",
+    "constructs": "^10.3.0",
+    "esbuild": "^0.20.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "postcss-scss": "^4.0.9",
+    "sass": "^1.69.5",
+    "stylelint": "^15.11.0",
+    "stylelint-config-standard": "^34.0.0",
+    "stylelint-config-standard-scss": "^11.1.0",
+    "stylelint-order": "^6.0.3",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.4.10"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": "eslint --cache --fix",
+    "*.{css,scss}": "stylelint --fix"
+  }
+}
