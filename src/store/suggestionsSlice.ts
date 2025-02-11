@@ -3,11 +3,11 @@ import { PromptSuggestionsData } from './types';
 
 const initialState: PromptSuggestionsData = {
   suggestions: {
-    tone       : [],
-    clarity    : [],
-    specificity: [],
-    context    : [],
-    format     : []
+    tone       : null,
+    clarity    : null,
+    specificity: null,
+    context    : null,
+    format     : null
   },
   current_tone: [],
   summary     : '',
@@ -22,15 +22,17 @@ const suggestionsSlice = createSlice({
       ...state,
       ...action.payload
     }),
-    clearSuggestions: () => initialState,
-    fetchSuggestions: (state, _: PayloadAction<string>) => state
+    clearSuggestions     : () => initialState,
+    fetchSuggestions     : (state, _: PayloadAction<string>) => state,
+    regenerateSuggestions: state => state
   }
 });
 
 export const {
   setSuggestions,
   clearSuggestions,
-  fetchSuggestions
+  fetchSuggestions,
+  regenerateSuggestions
 } = suggestionsSlice.actions;
 
 export default suggestionsSlice.reducer;

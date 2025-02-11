@@ -1,10 +1,9 @@
-/* eslint-disable max-len */
+import { useEffect } from 'react';
 import { ConfigProvider, Popover } from 'antd';
 import PromptBuddyContent from './PromptBuddyContent';
 import PromptBuddyIcon from './PromptBuddyIcon';
 import { withReduxStore } from './withReduxStore';
 import { useDispatch, useSelector } from 'react-redux';
-import { useEffect } from 'react';
 import { RootState } from '../store/types';
 import { fetchSuggestions } from '../store/suggestionsSlice';
 import PromptBuddyLoading from './PromptBuddyLoading';

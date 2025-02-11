@@ -1,17 +1,20 @@
 import json
 import os
 from openai import OpenAI
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 from enum import Enum
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-SYSTEM_PROMPT_FEW_SHOT = """
+intro_prompt = """
 This application evaluates user-generated prompts and provides structured suggestions for improving clarity, specificity, context, and format.
 
-Additionally, it generates a short, engaging summary that offers an opinionated or sassy take on the quality of the prompt. The goal is to provide users with actionable and useful feedback while keeping responses lively and engaging.
+Additionally, it generates a short, engaging summary that offers an opinionated or sassy take on the quality of the prompt. 
+The goal is to provide users with actionable and useful feedback while keeping responses lively and engaging.
+"""
 
+example_summaries = """
 Below are some example summaries based on different types of user prompts:
 
 Example 1:
@@ -25,8 +28,26 @@ Example 2:
 Example 3:
 - User Prompt: "How to make money fast?"
 - Summary: "Ah yes, the eternal question. Do you want legit ways or the ‘risk-it-all-on-crypto’ guide? I would be more specific."
+"""
 
-Now, please analyze the given user prompt and provide a similarly engaging summary along with structured suggestions for improvement of the user's prompt.
+BASE_SYSTEM_PROMPT = f"""
+{intro_prompt}
+
+{example_summaries}
+"""
+
+REGENERATION_SYSTEM_PROMPT = """
+{intro_prompt}
+
+The user has chosen to regenerate their prompt based on previous suggestions. They've incorporated the following feedback:
+
+{previous_suggestions}
+
+Please analyze their revised prompt and provide new suggestions for further improvement.
+
+Keep the tone engaging and constructive.
+
+{example_summaries}
 """
 
 
@@ -43,20 +64,25 @@ class ToneType(str, Enum):
 
 
 class Suggestions(BaseModel):
-    tone: List[str] = Field(
-        ..., description="Suggestions to improve tone of the prompt"
+    tone: Optional[List[str]] = Field(
+        ...,
+        description="Optional suggestions to improve the tone of the prompt along with a brief explanation",
     )
-    clarity: List[str] = Field(
-        ..., description="Suggestions to improve clarity of the prompt text"
+    clarity: Optional[List[str]] = Field(
+        ...,
+        description="Optional suggestions to improve the clarity of the prompt text along with a brief explanation",
     )
-    specificity: List[str] = Field(
-        ..., description="Suggestions to make the prompt more specific"
+    specificity: Optional[List[str]] = Field(
+        ...,
+        description="Optional suggestions to make the prompt more specific along with a brief explanation",
     )
-    context: List[str] = Field(
-        ..., description="Suggestions to improve context and coherence of the prompt"
+    context: Optional[List[str]] = Field(
+        ...,
+        description="Optional suggestions to improve the context and coherence of the prompt along with a brief explanation",
     )
-    format: List[str] = Field(
-        ..., description="Suggestions to improve formatting and structure of the prompt"
+    format: Optional[List[str]] = Field(
+        ...,
+        description="Optional suggestions to improve the formatting and structure of the prompt along with a brief explanation",
     )
 
 
@@ -74,21 +100,42 @@ class StructuredResponse(BaseModel):
     )
     rewrite: str = Field(
         ...,
-        description="A rewritten version of the input text with improvements applied.",
+        description="A rewritten version of the input text with your improvements applied.",
     )
 
 
-def get_suggestions(prompt):
+def format_previous_suggestions(suggestions: dict) -> str:
+    formatted = []
+    for category, items in suggestions.items():
+        if items:
+            formatted.append(f"\n{category.title()}:")
+            formatted.extend(f"- {item}" for item in items)
+    if not formatted:
+        return "Sorry, actually they didn't select any suggestions."
+    return "\n".join(formatted)
+
+
+def get_suggestions(prompt: str, selected_suggestions: Optional[dict] = None):
     """
-    Get suggestions from OpenAI with retry logic and schema validation
+    Get suggestions from LLM with retry logic and schema validation
     """
     try:
+        if selected_suggestions:
+            formatted_suggestions = format_previous_suggestions(selected_suggestions)
+            system_prompt = REGENERATION_SYSTEM_PROMPT.format(
+                intro_prompt=intro_prompt,
+                previous_suggestions=formatted_suggestions,
+                example_summaries=example_summaries,
+            )
+        else:
+            system_prompt = BASE_SYSTEM_PROMPT
+
         response = client.beta.chat.completions.parse(
             model=os.environ.get("OPENAI_MODEL", "gpt-4o"),
             messages=[
                 {
                     "role": "system",
-                    "content": SYSTEM_PROMPT_FEW_SHOT,
+                    "content": system_prompt,
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -122,6 +169,7 @@ def lambda_handler(event, context):
     try:
         body = json.loads(event.get("body", "{}"))
         prompt = body.get("prompt")
+        selected_suggestions = body.get("selectedSuggestions")
 
         if not prompt:
             return {
@@ -129,15 +177,13 @@ def lambda_handler(event, context):
                 "body": json.dumps({"error": "No prompt provided"}),
             }
 
-        response = get_suggestions(prompt)
+        response = get_suggestions(prompt, selected_suggestions)
 
-        if response.get("status") == "refusal" or response.get("status") == "error":
+        if response.get("status") in ["refusal", "error"]:
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": response.get("message")}),
             }
-
-        suggestions = response["data"]
 
         return {
             "statusCode": 200,
@@ -145,7 +191,7 @@ def lambda_handler(event, context):
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps(suggestions),
+            "body": json.dumps(response["data"]),
         }
 
     except Exception as e:

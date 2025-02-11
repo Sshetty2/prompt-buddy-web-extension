@@ -9,7 +9,7 @@ const initialState: UIState = {
   error              : null,
   originalPrompt     : '',
   firstRewrite       : '',
-  rewrittenPrompt    : '',
+  rewrittenPrompt    : null,
   suggestionsSelected: {
     tone       : [],
     clarity    : [],
@@ -54,17 +54,23 @@ const uiSlice = createSlice({
       const promptSuggestions = state.promptSuggestionsByCategory[action.payload.category];
 
       // get the suggestion from the prompt suggestions response
-      const suggestion = promptSuggestions[action.payload.suggestionIdx];
+      const suggestion = promptSuggestions?.[action.payload.suggestionIdx];
 
       // get the selected suggestions
       const selectedSuggestions = state.suggestionsSelected[action.payload.category];
 
       let newSuggestions = [];
 
+      if (!suggestion) {
+        state.error = 'No suggestion found. Please contact support if this persists.';
+
+        return;
+      }
+
       if (action.payload.value) {
         newSuggestions = [...selectedSuggestions, suggestion];
       } else {
-        newSuggestions = selectedSuggestions.filter(_suggestion => _suggestion !== suggestion);
+        newSuggestions = (selectedSuggestions || []).filter(_suggestion => _suggestion !== suggestion);
       }
 
       state.suggestionsSelected = {

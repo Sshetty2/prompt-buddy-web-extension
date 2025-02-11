@@ -7,7 +7,9 @@ export enum ESuggestionCategory {
   format = 'format'
 }
 
-type SuggestionCategory = Record<ESuggestionCategory, string[]>;
+type SuggestionCategory = Record<ESuggestionCategory, string[] | null>;
+
+type SuggestionCategorySelected = Record<ESuggestionCategory, string[]>;
 
 export interface PromptSuggestionsData {
   suggestions: SuggestionCategory;
@@ -26,7 +28,8 @@ export enum ECurrentTone {
   aggressive = 'aggressive',
   friendly = 'friendly',
   professional = 'professional',
-  academic = 'academic'
+  academic = 'academic',
+  curious = 'curious'
 }
 
 export interface UIState {
@@ -35,8 +38,8 @@ export interface UIState {
   error: string | null;
   originalPrompt: string;
   firstRewrite: string;
-  rewrittenPrompt: string;
-  suggestionsSelected: SuggestionCategory;
+  rewrittenPrompt: string | null;
+  suggestionsSelected: SuggestionCategorySelected;
   promptSuggestionsByCategory: SuggestionCategory;
 }
 
