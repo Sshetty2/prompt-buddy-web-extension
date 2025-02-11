@@ -1,0 +1,53 @@
+#prompt-buddy-icon {
+    background: none;
+    border: none;
+    cursor: help;
+    height: 27px;
+    left: -40px;
+    position: absolute;
+    top: 20px;
+    user-select: none;
+    width: 27px;
+}
+
+.prompt-buddy-svg {
+    filter: drop-shadow(0 0 2px rgb(0 0 0 / 20%));
+    height: 27px;
+    stroke: #fff;
+    stroke-width: .02px;
+    width: 27px;
+}
+
+@keyframes gradient-shift {
+    0% {
+        stop-color: #297305;
+    }
+
+    50% {
+        stop-color: #611fb1;
+    }
+
+    100% {
+        stop-color: #297305;
+    }
+}
+
+.gradient-start {
+    animation: gradient-shift 10s infinite;
+    stop-color: #297305;
+}
+
+.gradient-end {
+    animation: gradient-shift 10s infinite reverse;
+    stop-color: #611fb1;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

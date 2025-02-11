@@ -1,36 +1,51 @@
-import { useEffect, useState } from 'react';
-import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../amplify/data/resource';
+import { Input } from 'antd';
+import { useState, useEffect } from 'react';
+import { cursorStyle } from './styles/cursor';
+import PromptBuddyPopover from './components/PromptBuddyPopover';
 
-const client = generateClient<Schema>();
+const { TextArea } = Input;
 
 function App () {
-  const [todos, setTodos] = useState<Array<Schema['Todo']['type']>>([]);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({ next: data => setTodos([...data.items]) });
+    const style = document.createElement('style');
+    style.textContent = cursorStyle;
+    document.head.appendChild(style);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.code === 'Space') {
+        e.preventDefault();
+        setIsPopoverOpen(prev => !prev);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  function createTodo () {
-    // eslint-disable-next-line no-alert
-    client.models.Todo.create({ content: window.prompt('Todo content') });
-  }
-
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map(todo => (
-          <li key={todo.id}>{todo.content}</li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
+    <main style={{
+      padding : '20px',
+      maxWidth: '800px',
+      margin  : '0 auto'
+    }}
+    >
+      <h1>Prompt Buddy</h1>
+      <div style={{ position: 'relative' }}>
+
+        <TextArea
+          className="prompt-buddy-input"
+          rows={4}
+          placeholder="Type your prompt here... (Ctrl+Space to toggle helper)"
+          style={{ marginTop: '20px' }}
+        />
+
+        <PromptBuddyPopover
+          isPopoverOpen={isPopoverOpen}
+          setIsPopoverOpen={setIsPopoverOpen}
+        />
       </div>
     </main>
   );
