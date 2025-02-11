@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "Prompt Buddy",
+  "short_name": "Prompt Buddy",
+  "description": "This extension helps you to generate prompts for your AI",
+  "version": "1.0.0",
+  "icons": {
+    "16": "src/assets/react.svg",
+    "48": "src/assets/react.svg",
+    "128": "src/assets/react.svg"
+  },
+  "permissions": [
+  ],
+  "content_scripts": [
+    {
+      "js": [
+        "src/content.tsx"
+      ],
+      "matches": [
+        "https://*.meetup.com/home/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Open the popup"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/assets/*"
+      ],
+      "matches": []
+    },
+    {
+      "resources": [
+        "src/assets/fonts/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "content_security_policy": {},
+  "host_permissions": [
+    "https://*.chatgpt.com/*",
+    "https://*.claude.ai/*",
+    "https://*.perplexity.ai/*"
+  ]
+}
