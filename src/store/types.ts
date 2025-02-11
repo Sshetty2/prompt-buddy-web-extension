@@ -1,39 +1,46 @@
-// API Response Types
-export interface PromptSuggestions {
-  suggestions: {
-    tone: string[];
-    clarity: string[];
-    specificity: string[];
-    context: string[];
-    format: string[];
-  };
-  current_tone: string[];
+// eslint-disable-next-line no-shadow
+export enum ESuggestionCategory {
+  tone = 'tone',
+  clarity = 'clarity',
+  specificity = 'specificity',
+  context = 'context',
+  format = 'format'
+}
+
+type SuggestionCategory = Record<ESuggestionCategory, string[]>;
+
+export interface PromptSuggestionsData {
+  suggestions: SuggestionCategory;
+  current_tone: ECurrentTone[];
   summary: string;
   rewrite: string;
 }
 
-// UI State Types
+// eslint-disable-next-line no-shadow
+export enum ECurrentTone {
+  formal = 'formal',
+  informal = 'informal',
+  technical = 'technical',
+  casual = 'casual',
+  confused = 'confused',
+  aggressive = 'aggressive',
+  friendly = 'friendly',
+  professional = 'professional',
+  academic = 'academic'
+}
+
 export interface UIState {
   isStale: boolean;
   isLoading: boolean;
   error: string | null;
   originalPrompt: string;
+  firstRewrite: string;
   rewrittenPrompt: string;
+  suggestionsSelected: SuggestionCategory;
+  promptSuggestionsByCategory: SuggestionCategory;
 }
 
-// Slice States
-export interface PromptSuggestionsState extends PromptSuggestions {
-
-  // Any additional suggestion-specific state can go here
-}
-
-export interface UISliceState extends UIState {
-
-  // Any additional UI-specific state can go here
-}
-
-// Root State
 export interface RootState {
-  suggestions: PromptSuggestionsState;
-  ui: UISliceState;
+  suggestions: PromptSuggestionsData;
+  ui: UIState;
 }

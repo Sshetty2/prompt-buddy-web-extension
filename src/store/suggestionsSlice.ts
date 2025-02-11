@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { PromptSuggestions, PromptSuggestionsState } from './types';
+import { PromptSuggestionsData } from './types';
 
-const initialState: PromptSuggestionsState = {
+const initialState: PromptSuggestionsData = {
   suggestions: {
     tone       : [],
     clarity    : [],
@@ -15,10 +15,10 @@ const initialState: PromptSuggestionsState = {
 };
 
 const suggestionsSlice = createSlice({
-  name    : 'suggestions',
+  name    : 'suggestionsData',
   initialState,
   reducers: {
-    setSuggestions: (state, action: PayloadAction<PromptSuggestions>) => ({
+    setSuggestions: (state, action: PayloadAction<PromptSuggestionsData>) => ({
       ...state,
       ...action.payload
     }),

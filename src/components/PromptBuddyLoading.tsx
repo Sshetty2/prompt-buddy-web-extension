@@ -8,7 +8,7 @@ const PromptBuddyLoading = () => (
     style={{
       width       : 600,
       padding     : '40px 20px',
-      background  : '#fff',
+      background  : 'radial-gradient(circle, rgb(255 255 255 / 100%) 20%, rgb(168 179 255 / 100%) 100%)',
       borderRadius: '8px',
       opacity     : 1,
       transition  : 'opacity 0.2s ease-in-out',

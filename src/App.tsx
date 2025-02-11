@@ -1,6 +1,5 @@
 import { Input } from 'antd';
 import { useState, useEffect } from 'react';
-import { cursorStyle } from './styles/cursor';
 import PromptBuddyPopover from './components/PromptBuddyPopover';
 
 const { TextArea } = Input;
@@ -9,10 +8,6 @@ function App () {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = cursorStyle;
-    document.head.appendChild(style);
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.code === 'Space') {
         e.preventDefault();

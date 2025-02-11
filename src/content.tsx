@@ -1,12 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import { cursorStyle } from './styles/cursor';
 import PromptBuddyPopover from './components/PromptBuddyPopover';
-
-const injectStyles = () => {
-  const style = document.createElement('style');
-  style.textContent = cursorStyle;
-  document.head.appendChild(style);
-};
 
 const wrapInputWithPopover = (input: HTMLElement) => {
   input.classList.add('prompt-buddy-input');
@@ -63,9 +56,6 @@ const findAndWrapInputs = () => {
     });
   });
 };
-
-// Inject styles first
-injectStyles();
 
 // Observer to detect new inputs
 const observer = new MutationObserver(() => {

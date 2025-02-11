@@ -1,12 +1,29 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { UISliceState } from './types';
+import { ESuggestionCategory, UIState } from './types';
+import { checkIsStale } from './checkIsStale';
+import { setSuggestions } from './suggestionsSlice';
 
-const initialState: UISliceState = {
-  isStale        : true,
-  isLoading      : false,
-  error          : null,
-  originalPrompt : '',
-  rewrittenPrompt: ''
+const initialState: UIState = {
+  isStale            : true,
+  isLoading          : false,
+  error              : null,
+  originalPrompt     : '',
+  firstRewrite       : '',
+  rewrittenPrompt    : '',
+  suggestionsSelected: {
+    tone       : [],
+    clarity    : [],
+    specificity: [],
+    context    : [],
+    format     : []
+  },
+  promptSuggestionsByCategory: {
+    tone       : [],
+    clarity    : [],
+    specificity: [],
+    context    : [],
+    format     : []
+  }
 };
 
 const uiSlice = createSlice({
@@ -27,8 +44,43 @@ const uiSlice = createSlice({
     },
     setRewrittenPrompt: (state, action: PayloadAction<string>) => {
       state.rewrittenPrompt = action.payload;
+      state.isStale = checkIsStale(state);
+    },
+    setSelectedSuggestions: (state, action: PayloadAction<{
+      category: ESuggestionCategory;
+      suggestionIdx: number;
+      value: boolean
+    }>) => {
+      const promptSuggestions = state.promptSuggestionsByCategory[action.payload.category];
+
+      // get the suggestion from the prompt suggestions response
+      const suggestion = promptSuggestions[action.payload.suggestionIdx];
+
+      // get the selected suggestions
+      const selectedSuggestions = state.suggestionsSelected[action.payload.category];
+
+      let newSuggestions = [];
+
+      if (action.payload.value) {
+        newSuggestions = [...selectedSuggestions, suggestion];
+      } else {
+        newSuggestions = selectedSuggestions.filter(_suggestion => _suggestion !== suggestion);
+      }
+
+      state.suggestionsSelected = {
+        ...state.suggestionsSelected,
+        [action.payload.category]: newSuggestions
+      };
+
+      state.isStale = checkIsStale(state);
     },
     resetUI: () => initialState
+  },
+  extraReducers: builder => {
+    builder.addCase(setSuggestions, (state, action) => {
+      state.firstRewrite = action.payload.rewrite;
+      state.promptSuggestionsByCategory = action.payload.suggestions;
+    });
   }
 });
 
@@ -38,7 +90,8 @@ export const {
   setError,
   setOriginalPrompt,
   setRewrittenPrompt,
-  resetUI
+  resetUI,
+  setSelectedSuggestions
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

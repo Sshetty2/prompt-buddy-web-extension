@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { Button, Tooltip } from 'antd';
+import { Tooltip } from 'antd';
 
 const IconSvg = () => (
   <svg

@@ -1,50 +1,41 @@
 import { Card, Button, Space, Tooltip, Input, Collapse, Tag, ConfigProvider, Splitter, Flex, Checkbox } from 'antd';
 import { SettingOutlined, CloseOutlined, SyncOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import RobotSVG from './RobotSVG';
+import { ECurrentTone, ESuggestionCategory, RootState } from '../store/types';
+import { useDispatch, useSelector } from 'react-redux';
+import { useCallback } from 'react';
+import { setIsStale, setRewrittenPrompt, setSelectedSuggestions } from '../store/uiSlice';
+import { fetchSuggestions } from '../store/suggestionsSlice';
 
 const { TextArea } = Input;
-const { Panel } = Collapse;
 
-const TONE_COLORS = {
-  formal      : 'magenta',
-  informal    : 'cyan',
-  technical   : 'purple',
-  casual      : 'blue',
-  confused    : 'orange',
-  aggressive  : 'red',
-  friendly    : 'green',
-  professional: 'geekblue',
-  academic    : 'volcano'
-} as const;
+const TONE_COLORS: Record<ECurrentTone, string> = {
+  [ECurrentTone.formal]      : 'magenta',
+  [ECurrentTone.informal]    : 'cyan',
+  [ECurrentTone.technical]   : 'purple',
+  [ECurrentTone.casual]      : 'blue',
+  [ECurrentTone.confused]    : 'orange',
+  [ECurrentTone.aggressive]  : 'red',
+  [ECurrentTone.friendly]    : 'green',
+  [ECurrentTone.professional]: 'geekblue',
+  [ECurrentTone.academic]    : 'volcano'
+};
 
-const PromptBuddyContent = ({
-  setIsPopoverOpen,
-  isStale,
-  setIsStale,
-  originalPrompt,
-  setOriginalPrompt,
-  rewrittenPrompt,
-  setRewrittenPrompt,
-  data,
-  onRegenerate,
-  onApply
-}: {
+const PromptBuddyContent = ({ setIsPopoverOpen, originalPrompt }: {
   setIsPopoverOpen: (isOpen: boolean) => void;
-  isStale: boolean;
-  setIsStale: (stale: boolean) => void;
   originalPrompt: string;
-  setOriginalPrompt: (prompt: string) => void;
-  rewrittenPrompt: string;
-  setRewrittenPrompt: (prompt: string) => void;
-  data: any;
-  onRegenerate: () => void;
-  onApply: () => void;
 }) => {
-  if (!data) {
-    return null;
-  }
+  const dispatch = useDispatch();
 
-  const buildCollapseItems = (suggestions: any) => Object.entries(suggestions).map(([category, items]) => ({
+  const isStale = useSelector((state: RootState) => state.ui.isStale);
+
+  const data = useSelector((state: RootState) => state.suggestions);
+  const rewrittenPrompt = useSelector((state: RootState) => state.ui.rewrittenPrompt);
+  const firstRewrite = useSelector((state: RootState) => state.ui.firstRewrite);
+
+  const { suggestions, summary, current_tone } = data;
+
+  const buildCollapseItems = useCallback(() => Object.entries(suggestions).map(([category, items]) => ({
     key     : category,
     label   : category.charAt(0).toUpperCase() + category.slice(1),
     children: items.map((suggestion: string, index: number) => (
@@ -61,16 +52,23 @@ const PromptBuddyContent = ({
         <Checkbox
           style={{
             marginBottom: 'auto',
+            marginLeft  : 'auto',
             top         : '5px',
             position    : 'relative'
           }}
-          onChange={() => setIsStale(true)}
-        /> {/* Mark as stale if modified */}
+          onChange={e => dispatch(setSelectedSuggestions({
+            category     : category as ESuggestionCategory,
+            suggestionIdx: index,
+            value        : e.target.checked
+          }))}
+        />
       </ul>
     ))
-  }));
+  })), [dispatch, suggestions]);
 
-  const { suggestions, tone, summary, rewrite } = data;
+  if (!data) {
+    return null;
+  }
 
   return (
     <Card
@@ -79,7 +77,7 @@ const PromptBuddyContent = ({
         width  : 580,
         padding: '8px',
         gap    : '12px',
-        border : isStale ? '2px solid orange' : '1px solid #ddd'
+        border : isStale ? '2px solid orange' : '1px solid green'
       }}
       title="Prompt Buddy"
       extra={
@@ -148,7 +146,7 @@ const PromptBuddyContent = ({
             >
               <Collapse
                 accordion
-                items={buildCollapseItems(suggestions)}
+                items={buildCollapseItems()}
               />
             </ConfigProvider>
           </Flex>
@@ -190,7 +188,7 @@ const PromptBuddyContent = ({
               gap="8px 0"
               wrap
             >
-              {tone.current.map(tag => (
+              {current_tone.map(tag => (
                 <Tag
                   style={{ marginInlineEnd: '6px' }}
                   key={tag}
@@ -200,7 +198,6 @@ const PromptBuddyContent = ({
                 </Tag>
               ))}
             </Flex>
-            {/* <small>💡 {suggestions[0]}</small> */}
           </Flex>
 
           {/* Rewrite Prompt (Editable) */}
@@ -216,15 +213,14 @@ const PromptBuddyContent = ({
             <TextArea
               rows={2}
               autoSize={true}
-              value={rewrite}
+              value={rewrittenPrompt || firstRewrite}
               style={{
                 flexGrow : 'inherit',
                 minHeight: '100px',
                 maxHeight: '300px'
               }}
               onChange={e => {
-                setRewrittenPrompt(e.target.value);
-                setIsStale(true); // Mark as stale if modified
+                dispatch(setRewrittenPrompt(e.target.value));
               }}
             />
           </div>
@@ -240,8 +236,8 @@ const PromptBuddyContent = ({
                 <Button
                   type="default"
                   icon={<SyncOutlined />}
-                  onClick={onRegenerate}
-                  disabled={!isStale}
+                  onClick={() => dispatch(fetchSuggestions(originalPrompt))}
+                  disabled={isStale}
                 />
               </div>
             </Tooltip>
@@ -250,7 +246,9 @@ const PromptBuddyContent = ({
                 <Button
                   type="primary"
                   icon={<ArrowRightOutlined />}
-                  onClick={onApply}
+                  onClick={() => {
+                    // send to input box
+                  }}
                 />
               </div>
             </Tooltip>

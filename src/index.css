@@ -2,7 +2,7 @@
 
 body {
   align-items: center;
-  background-color: #171717;
+  background: radial-gradient(circle, rgb(255 255 255 / 100%) 20%, rgb(168 179 255 / 100%) 100%);
   display: flex;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   height: 100vh;
