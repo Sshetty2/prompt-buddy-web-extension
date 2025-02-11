@@ -407,6 +407,7 @@ export default [
         'warn',
         { allowConstantExport: true }
       ],
+      'react/jsx-closing-bracket-location': ['error', 'line-aligned'],
       curly                               : ['error', 'all'],
       'no-continue'                       : 'off',
       'no-warning-comments'               : 'off',
