@@ -30,6 +30,10 @@ amplifyconfiguration*
 
 .env
 
+.venv
+
 .eslintcache
 
 *.zip
+
+.lambda
