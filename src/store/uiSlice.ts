@@ -4,6 +4,7 @@ import { checkIsStale } from './checkIsStale';
 import { setSuggestions } from './suggestionsSlice';
 
 const initialState: UIState = {
+  isPopoverOpen      : false,
   isStale            : true,
   isLoading          : false,
   error              : null,
@@ -30,6 +31,9 @@ const uiSlice = createSlice({
   name    : 'ui',
   initialState,
   reducers: {
+    setIsPopoverOpen: (state, action: PayloadAction<boolean>) => {
+      state.isPopoverOpen = action.payload;
+    },
     setIsStale: (state, action: PayloadAction<boolean>) => {
       state.isStale = action.payload;
     },
@@ -96,6 +100,7 @@ export const {
   setError,
   setOriginalPrompt,
   setRewrittenPrompt,
+  setIsPopoverOpen,
   resetUI,
   setSelectedSuggestions
 } = uiSlice.actions;

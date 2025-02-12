@@ -2,25 +2,25 @@ import { useEffect } from 'react';
 import { ConfigProvider, Popover } from 'antd';
 import PromptBuddyContent from './PromptBuddyContent';
 import PromptBuddyIcon from './PromptBuddyIcon';
-import { withReduxStore } from './withReduxStore';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store/types';
 import { fetchSuggestions } from '../store/suggestionsSlice';
 import PromptBuddyLoading from './PromptBuddyLoading';
+
 import './styles.css';
 
-const PromptBuddyPopover = ({ isPopoverOpen, setIsPopoverOpen }: {
-  isPopoverOpen: boolean,
-  setIsPopoverOpen: (isOpen: boolean) => void,
-}) => {
+const PromptBuddyPopover = () => {
   const dispatch = useDispatch();
   const isLoading = useSelector((state: RootState) => state.ui.isLoading);
+  const originalPrompt = useSelector((state: RootState) => state.ui.originalPrompt);
+  const isPopoverOpen = useSelector((state: RootState) => state.ui.isPopoverOpen);
 
   useEffect(() => {
-    dispatch(fetchSuggestions('Tell me if a blow dryer a good birthday gift?'));
-  }, [dispatch]);
-
-  const originalPrompt = 'Tell me if a blow dryer a good birthday gift?';
+    if (originalPrompt && isPopoverOpen) {
+      dispatch(fetchSuggestions(originalPrompt));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPopoverOpen]);
 
   return (
     <ConfigProvider
@@ -37,10 +37,7 @@ const PromptBuddyPopover = ({ isPopoverOpen, setIsPopoverOpen }: {
       <Popover
         content={
           isLoading ? <PromptBuddyLoading /> : (
-            <PromptBuddyContent
-              originalPrompt={originalPrompt}
-              setIsPopoverOpen={setIsPopoverOpen}
-            />
+            <PromptBuddyContent />
           )
         }
         open={isPopoverOpen}
@@ -51,19 +48,13 @@ const PromptBuddyPopover = ({ isPopoverOpen, setIsPopoverOpen }: {
             padding: 0,
             zIndex : 1000
           }
-
         }}
       >
-        <PromptBuddyIcon
-          isPopoverOpen={isPopoverOpen}
-          setIsPopoverOpen={setIsPopoverOpen}
-        />
+        <PromptBuddyIcon />
       </Popover>
 
     </ConfigProvider>
   );
 };
 
-const PromptBuddyPopoverWithRedux = withReduxStore(PromptBuddyPopover);
-
-export default PromptBuddyPopoverWithRedux;
+export default PromptBuddyPopover;

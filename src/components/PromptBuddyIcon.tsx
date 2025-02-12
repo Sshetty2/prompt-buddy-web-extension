@@ -1,5 +1,8 @@
 /* eslint-disable max-len */
 import { Tooltip } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
+import { setIsPopoverOpen } from '../store/uiSlice';
+import { RootState } from '../store/types';
 
 const IconSvg = () => (
   <svg
@@ -38,9 +41,14 @@ const IconSvg = () => (
   </svg>
 );
 
-const PromptBuddyIcon = ({ isPopoverOpen, setIsPopoverOpen }: { isPopoverOpen: boolean, setIsPopoverOpen: (isOpen: boolean) => void }) => {
-  const handleClick = () => {
-    setIsPopoverOpen(!isPopoverOpen);
+const PromptBuddyIcon = () => {
+  const dispatch = useDispatch();
+  const isPopoverOpen = useSelector((state: RootState) => state.ui.isPopoverOpen);
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch(setIsPopoverOpen(!isPopoverOpen));
   };
 
   return (

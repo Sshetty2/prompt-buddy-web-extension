@@ -33,6 +33,7 @@ export enum ECurrentTone {
 }
 
 export interface UIState {
+  isPopoverOpen: boolean;
   isStale: boolean;
   isLoading: boolean;
   error: string | null;
