@@ -10,6 +10,7 @@
     "128": "src/assets/react.svg"
   },
   "permissions": [
+    "tabs"
   ],
   "content_scripts": [
     {
@@ -17,7 +18,9 @@
         "src/content.tsx"
       ],
       "matches": [
-        "https://*.meetup.com/home/*"
+        "https://*.chatgpt.com/*",
+        "https://*.claude.ai/*",
+        "https://*.perplexity.ai/*"
       ]
     }
   ],
@@ -46,5 +49,9 @@
     "https://*.chatgpt.com/*",
     "https://*.claude.ai/*",
     "https://*.perplexity.ai/*"
-  ]
+  ],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  }
 }
