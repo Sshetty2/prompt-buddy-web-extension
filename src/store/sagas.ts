@@ -1,7 +1,7 @@
 import { call, put, takeLatest, select } from 'typed-redux-saga';
 import { SagaIterator } from 'redux-saga';
 import { fetchSuggestions, setSuggestions, regenerateSuggestions } from './suggestionsSlice';
-import { setIsLoading, setError, setIsStale } from './uiSlice';
+import { setIsLoading, setError, setIsStale, setRewrittenPrompt } from './uiSlice';
 import { RootState } from './types';
 
 function* fetchSuggestionsSaga (
@@ -16,6 +16,7 @@ function* fetchSuggestionsSaga (
   try {
     yield* put(setIsLoading(true));
     yield* put(setError(null));
+    yield* put(setRewrittenPrompt(null));
 
     const response = yield* call(
       fetch,
@@ -71,8 +72,8 @@ function* regenerateSuggestionsSaga (): SagaIterator {
       }
     }
 
+    yield* put(setIsStale(true));
     yield* put(setSuggestions(data));
-    yield* put(setIsStale(false));
   } catch (error) {
     if (error instanceof Error) {
       yield* put(setError(`${error.name}; ${error.message}`));
@@ -80,7 +81,7 @@ function* regenerateSuggestionsSaga (): SagaIterator {
       yield* put(setError('Failed to generate suggestions. Contact support if this persists.'));
     }
   } finally {
-    yield* put(setIsLoading(false));
+    yield* put(setIsLoading(true));
   }
 }
 

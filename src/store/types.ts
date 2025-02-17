@@ -42,9 +42,23 @@ export interface UIState {
   rewrittenPrompt: string | null;
   suggestionsSelected: SuggestionCategorySelected;
   promptSuggestionsByCategory: SuggestionCategory;
+  platformConfig: PlatformConfig | null;
 }
 
 export interface RootState {
   suggestions: PromptSuggestionsData;
   ui: UIState;
 }
+
+export interface PlatformConfig {
+  selector: string;
+  useInnerHTML: boolean;
+}
+
+// eslint-disable-next-line no-shadow
+export enum AIPlatform {
+  CHATGPT = 'chatgpt.com',
+  CLAUDE = 'claude.ai',
+  PERPLEXITY = 'perplexity.ai'
+}
+

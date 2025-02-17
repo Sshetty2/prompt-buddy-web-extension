@@ -1,7 +1,7 @@
-import { Input } from 'antd';
-import { useEffect, useState } from 'react';
+import { Card, Input } from 'antd';
+import { useEffect, useRef, useState } from 'react';
 import PromptBuddyPopover from './components/PromptBuddyPopover';
-import { setIsPopoverOpen } from './store/uiSlice';
+import { setIsPopoverOpen, setIsStale } from './store/uiSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from './store/types';
 
@@ -26,25 +26,44 @@ function App () {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
   return (
     <main style={{
-      padding : '20px',
-      maxWidth: '800px',
-      margin  : '0 auto'
+      boxSizing: 'border-box',
+      position : 'fixed',
+      top      : 0,
+      left     : 0
     }}
     >
-      <h1>Prompt Buddy</h1>
-      <div style={{ position: 'relative' }}>
-        <TextArea
-          className="prompt-buddy-input"
-          rows={4}
-          value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
-          placeholder="Type your prompt here... (Ctrl+Space to toggle helper)"
-          style={{ marginTop: '20px' }}
-        />
-        <PromptBuddyPopover />
-      </div>
+      <Card
+        title="Prompt Buddy"
+        style={{
+          width    : '100%',
+          height   : '100%',
+          padding  : '20px',
+          boxSizing: 'inherit'
+        }}
+      >
+        <div style={{ position: 'relative' }}>
+          <TextArea
+            className="prompt-buddy-input"
+            rows={4}
+            ref={inputRef}
+            value={inputValue}
+            onChange={e => {
+              dispatch(setIsStale(true));
+              setInputValue(e.target.value);
+            }}
+            placeholder="Type your prompt here... (Ctrl+Space to toggle helper)"
+            style={{ marginTop: '20px' }}
+          />
+          <PromptBuddyPopover
+            input={inputRef.current}
+            setInputValue={setInputValue}
+          />
+        </div>
+      </Card>
     </main>
   );
 }

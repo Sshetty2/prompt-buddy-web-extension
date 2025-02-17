@@ -1,20 +1,9 @@
 import ReactDOM from 'react-dom/client';
 import PromptBuddyPopover from './components/PromptBuddyPopover';
 import { Provider } from 'react-redux';
-import { setIsPopoverOpen, setOriginalPrompt } from './store/uiSlice';
+import { setIsPopoverOpen, setOriginalPrompt, setPlatformConfig } from './store/uiSlice';
 import { createStore } from './store/createStore';
-
-// eslint-disable-next-line no-shadow
-enum AIPlatform {
-  CHATGPT = 'chatgpt.com',
-  CLAUDE = 'claude.ai',
-  PERPLEXITY = 'perplexity.ai'
-}
-
-interface PlatformConfig {
-  selector: string;
-  useInnerHTML: boolean;
-}
+import { AIPlatform, PlatformConfig } from './store/types';
 
 const PLATFORM_CONFIGS: Record<AIPlatform, PlatformConfig> = {
   [AIPlatform.CHATGPT]: {
@@ -100,7 +89,6 @@ const wrapInputWithPopover = (input: HTMLElement, platformConfig: PlatformConfig
 
   input?.parentNode?.appendChild(wrapper);
 
-  // watch for text input changes
   const observer = new MutationObserver(() => {
     const newText = platformConfig.useInnerHTML ? input.innerHTML : input.textContent;
 
@@ -124,10 +112,14 @@ const wrapInputWithPopover = (input: HTMLElement, platformConfig: PlatformConfig
     }
   };
 
+  store.dispatch(setPlatformConfig(platformConfig));
+
   const render = () => {
     root.render(
       <Provider store={store}>
-        <PromptBuddyPopover />
+        <PromptBuddyPopover
+          input={input}
+        />
       </Provider>
     );
   };

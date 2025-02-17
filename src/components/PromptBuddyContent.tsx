@@ -35,7 +35,7 @@ const TONE_COLORS: Record<ECurrentTone, string> = {
   [ECurrentTone.curious]     : 'gold'
 };
 
-const PromptBuddyContent = () => {
+const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void }) => {
   const dispatch = useDispatch();
 
   const isStale = useSelector((state: RootState) => state.ui.isStale);
@@ -47,7 +47,9 @@ const PromptBuddyContent = () => {
 
   const { suggestions, summary, current_tone } = data;
 
-  const buildCollapseItems = useCallback(() => Object.entries(suggestions).map(([category, items]) => ({
+  const buildCollapseItems = useCallback(() => Object.entries(suggestions).map((
+    [category, items]
+  ) => (items && items.length > 0 ? {
     key     : category,
     label   : category.charAt(0).toUpperCase() + category.slice(1),
     children: items?.map((suggestion: string, index: number) => (
@@ -76,7 +78,9 @@ const PromptBuddyContent = () => {
         />
       </ul>
     ))
-  })), [dispatch, suggestions]);
+  } : null))
+    .filter(item => item !== null),
+  [dispatch, suggestions]);
 
   if (!data) {
     return null;
@@ -267,9 +271,7 @@ const PromptBuddyContent = () => {
                 <Button
                   type="primary"
                   icon={<ArrowRightOutlined />}
-                  onClick={() => {
-                    // TODO: send to input box
-                  }}
+                  onClick={()=> writeTextToInput()}
                 />
               </div>
             </Tooltip>

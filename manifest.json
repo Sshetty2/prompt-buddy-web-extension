@@ -5,9 +5,9 @@
   "description": "This extension helps you to generate prompts for your AI",
   "version": "1.0.0",
   "icons": {
-    "16": "src/assets/react.svg",
-    "48": "src/assets/react.svg",
-    "128": "src/assets/react.svg"
+    "16": "src/assets/robot.png",
+    "48": "src/assets/robot.png",
+    "128": "src/assets/robot.png"
   },
   "permissions": [
     "tabs"

@@ -5,14 +5,19 @@ body {
   background: radial-gradient(circle, rgb(255 255 255 / 100%) 20%, rgb(168 179 255 / 100%) 100%);
   display: flex;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  height: 100vh;
-  justify-content: center;
+  height: 300px;
   margin: 0;
-  width: 100vw;
+  overflow: hidden;
+  padding: 0;
+  width: 300px;
 }
 
 main {
   align-items: stretch;
   display: flex;
   flex-direction: column;
+  height: 300px;
+  min-height: 300px;
+  min-width: 300px;
+  width: 300px;
 }

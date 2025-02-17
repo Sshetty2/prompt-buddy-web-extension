@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ESuggestionCategory, UIState } from './types';
+import { ESuggestionCategory, PlatformConfig, UIState } from './types';
 import { checkIsStale } from './checkIsStale';
 import { setSuggestions } from './suggestionsSlice';
 
@@ -11,6 +11,7 @@ const initialState: UIState = {
   originalPrompt     : '',
   firstRewrite       : '',
   rewrittenPrompt    : null,
+  platformConfig     : null,
   suggestionsSelected: {
     tone       : [],
     clarity    : [],
@@ -46,9 +47,12 @@ const uiSlice = createSlice({
     setOriginalPrompt: (state, action: PayloadAction<string>) => {
       state.originalPrompt = action.payload;
     },
-    setRewrittenPrompt: (state, action: PayloadAction<string>) => {
+    setRewrittenPrompt: (state, action: PayloadAction<string | null>) => {
       state.rewrittenPrompt = action.payload;
       state.isStale = checkIsStale(state);
+    },
+    setPlatformConfig: (state, action: PayloadAction<PlatformConfig>) => {
+      state.platformConfig = action.payload;
     },
     setSelectedSuggestions: (state, action: PayloadAction<{
       category: ESuggestionCategory;
@@ -57,10 +61,8 @@ const uiSlice = createSlice({
     }>) => {
       const promptSuggestions = state.promptSuggestionsByCategory[action.payload.category];
 
-      // get the suggestion from the prompt suggestions response
       const suggestion = promptSuggestions?.[action.payload.suggestionIdx];
 
-      // get the selected suggestions
       const selectedSuggestions = state.suggestionsSelected[action.payload.category];
 
       let newSuggestions = [];
@@ -89,6 +91,7 @@ const uiSlice = createSlice({
   extraReducers: builder => {
     builder.addCase(setSuggestions, (state, action) => {
       state.firstRewrite = action.payload.rewrite;
+      state.rewrittenPrompt = action.payload.rewrite;
       state.promptSuggestionsByCategory = action.payload.suggestions;
     });
   }
@@ -102,7 +105,8 @@ export const {
   setRewrittenPrompt,
   setIsPopoverOpen,
   resetUI,
-  setSelectedSuggestions
+  setSelectedSuggestions,
+  setPlatformConfig
 } = uiSlice.actions;
 
 export default uiSlice.reducer;
