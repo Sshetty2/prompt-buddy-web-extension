@@ -8,7 +8,7 @@ import { fetchSuggestions } from '../store/suggestionsSlice';
 import PromptBuddyLoading from './PromptBuddyLoading';
 
 import './styles.css';
-import { setIsStale } from '../store/uiSlice';
+import { setIsStale, setOriginalPrompt } from '../store/uiSlice';
 
 const PromptBuddyPopover = ({
   input,
@@ -23,6 +23,7 @@ const PromptBuddyPopover = ({
   const rewrittenPrompt = useSelector((state: RootState) => state.ui.rewrittenPrompt);
   const platformConfig = useSelector((state: RootState) => state.ui.platformConfig);
   const originalPrompt = useSelector((state: RootState) => state.ui.originalPrompt);
+  const isStale = useSelector((state: RootState) => state.ui.isStale);
 
   const memoizedInputValue = useMemo(() => {
     if (!input) {
@@ -63,8 +64,12 @@ const PromptBuddyPopover = ({
   }, [input, rewrittenPrompt, setInputValue, platformConfig?.useInnerHTML, dispatch]);
 
   useEffect(() => {
-    if (isPopoverOpen && (memoizedInputValue || originalPrompt)) {
-      dispatch(fetchSuggestions(memoizedInputValue || originalPrompt));
+    if (isStale || isPopoverOpen && (originalPrompt ?? memoizedInputValue)) {
+      dispatch(fetchSuggestions(originalPrompt || memoizedInputValue));
+
+      if (!originalPrompt) {
+        dispatch(setOriginalPrompt(memoizedInputValue));
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, isPopoverOpen]);

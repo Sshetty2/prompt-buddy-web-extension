@@ -46,6 +46,10 @@ const uiSlice = createSlice({
     },
     setOriginalPrompt: (state, action: PayloadAction<string>) => {
       state.originalPrompt = action.payload;
+
+      if (state.firstRewrite !== action.payload) {
+        state.isStale = true;
+      }
     },
     setRewrittenPrompt: (state, action: PayloadAction<string | null>) => {
       state.rewrittenPrompt = action.payload;
