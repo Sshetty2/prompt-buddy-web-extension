@@ -1,5 +1,4 @@
-# Privacy Policy for Meetup Batch Event Set Tool
-
+# Privacy Policy for Prompt Buddy
 Last Updated: February 18, 2025
 
 ## Introduction
