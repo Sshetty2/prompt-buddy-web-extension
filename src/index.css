@@ -1,8 +1,11 @@
 @import 'antd/dist/reset.css';
 
+* {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 body {
   align-items: center;
-  background: radial-gradient(circle, rgb(255 255 255 / 100%) 20%, rgb(168 179 255 / 100%) 100%);
   display: flex;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   height: 300px;
@@ -11,6 +14,14 @@ body {
   padding: 0;
   width: 300px;
 }
+
+/* [data-theme='light'] body {
+  background: radial-gradient(circle, rgb(255 255 255 / 100%) 20%, rgb(168 179 255 / 100%) 100%);
+}
+
+[data-theme='dark'] body {
+  background: radial-gradient(circle, rgb(31 31 31 / 100%) 20%, rgb(47 47 47 / 100%) 100%);
+} */
 
 main {
   align-items: stretch;

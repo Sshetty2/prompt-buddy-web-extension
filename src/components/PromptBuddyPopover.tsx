@@ -22,7 +22,8 @@ const PromptBuddyPopover = ({ input, setInputValue }: PromptBuddyPopoverProps) =
     isLoading,
     isPopoverOpen,
     rewrittenPrompt,
-    originalPrompt
+    originalPrompt,
+    isStale
   } = useAppSelector(state => state.ui);
 
   // Use platform state hook
@@ -69,15 +70,18 @@ const PromptBuddyPopover = ({ input, setInputValue }: PromptBuddyPopoverProps) =
     }
   }, [dispatch, input, platformConfig, rewrittenPrompt, setInputValue]);
 
-  // Effect to handle suggestion fetching
   useEffect(() => {
     if (!isPopoverOpen) {
       return;
     }
 
-    if (originalPrompt !== memoizedInputValue) {
-      dispatch(setOriginalPrompt(memoizedInputValue));
-      dispatch(fetchSuggestions(memoizedInputValue));
+    if ((originalPrompt !== memoizedInputValue || isStale) && (originalPrompt || memoizedInputValue)) {
+      if (platformConfig?.current === undefined && originalPrompt == undefined) {
+        dispatch(setOriginalPrompt(memoizedInputValue));
+        dispatch(fetchSuggestions(memoizedInputValue));
+      } else {
+        dispatch(fetchSuggestions(originalPrompt));
+      }
     }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

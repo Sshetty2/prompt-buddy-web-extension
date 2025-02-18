@@ -15,6 +15,7 @@ export enum ECurrentTone {
   formal = 'formal',
   informal = 'informal',
   inquisitive = 'inquisitive',
+  informative = 'informative',
   technical = 'technical',
   casual = 'casual',
   confused = 'confused',

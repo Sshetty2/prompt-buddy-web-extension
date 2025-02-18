@@ -11,10 +11,14 @@ import {
   Splitter,
   Flex,
   Checkbox,
-  Alert
+  Alert,
+  theme as antdTheme
 } from 'antd';
+import { blue, green, yellow, red } from '@ant-design/colors';
+
 import {
-  SettingOutlined,
+
+  // SettingOutlined,
   CloseOutlined,
   SyncOutlined,
   ArrowRightOutlined
@@ -32,8 +36,10 @@ import {
   useSuggestionState
 } from '../store/hooks';
 import RobotSVG from './RobotSVG';
+import { useTheme } from '../theme/ThemeContext';
 
 const { TextArea } = Input;
+const { useToken } = antdTheme;
 
 const TONE_COLORS: Record<ECurrentTone, string> = {
   [ECurrentTone.formal]      : 'magenta',
@@ -43,6 +49,7 @@ const TONE_COLORS: Record<ECurrentTone, string> = {
   [ECurrentTone.inquisitive] : 'gold',
   [ECurrentTone.confused]    : 'orange',
   [ECurrentTone.aggressive]  : 'red',
+  [ECurrentTone.informative] : 'green',
   [ECurrentTone.friendly]    : 'green',
   [ECurrentTone.professional]: 'geekblue',
   [ECurrentTone.academic]    : 'volcano',
@@ -92,8 +99,17 @@ interface PromptBuddyContentProps {
   writeTextToInput: () => void;
 }
 
+const getIconColor = (isDisabled: boolean, theme: 'light' | 'dark', colors: string[]) => {
+  if (isDisabled) {
+    return theme === 'dark' ? '#ffffff40' : '#00000040';
+  }
+
+  return theme === 'dark' ? colors[2] : colors[6];
+};
+
 const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) => {
   const dispatch = useAppDispatch();
+  const { token } = useToken();
 
   // Use UI state
   const {
@@ -107,6 +123,7 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
   // Use suggestion state
   const { categories, analysis, status } = useSuggestionState();
   const suggestionsSelected = useAppSelector(state => state.ui.suggestionsSelected);
+  const { theme, toggleTheme } = useTheme();
 
   const handleSuggestionSelect = useCallback(
     (category: ESuggestionCategory, index: number, value: boolean) => {
@@ -187,10 +204,11 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
     <Card
       size="small"
       style={{
-        width  : 580,
-        padding: '8px',
-        gap    : '12px',
-        border : isStale ? '2px solid orange' : '1px solid green'
+        width     : 580,
+        padding   : '8px',
+        gap       : '12px',
+        border    : isStale ? '2px solid orange' : '1px solid green',
+        background: token.colorBgContainer
       }}
       title="Prompt Buddy"
       extra={
@@ -199,9 +217,12 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
             <div>
               <Button
                 type="text"
-                icon={<SettingOutlined />}
+
                 size="small"
-              />
+                onClick={toggleTheme}
+              >
+                {theme === 'light' ? '🌙' : '☀️'}
+              </Button>
             </div>
           </Tooltip>
           <Button
@@ -219,21 +240,27 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
           banner
           closable
           type="error"
-          style={{ marginBottom: '8px' }}
+          style={{
+            marginBottom: '8px',
+            background  : token.colorErrorBg || red[1],
+            border      : `1px solid ${red[3]}`
+          }}
         />
       )}
 
-      {!originalPrompt && (
+      {!originalPrompt ? (
         <Alert
           message="No prompt provided. Please enter a prompt to get started."
           banner
           closable
           type="warning"
-          style={{ marginBottom: '8px' }}
+          style={{
+            marginBottom: '8px',
+            background  : token.colorWarningBg || yellow[1],
+            border      : `1px solid ${yellow[3]}`
+          }}
         />
-      )}
-
-      <Splitter style={{
+      ) : <Splitter style={{
         display      : 'flex',
         flexDirection: 'row'
       }}
@@ -250,17 +277,22 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
             gap="12px"
           >
             <ConfigProvider
-              theme={{ components: { Card: { bodyPadding: 12 } } }}
+              theme={{
+                components: {
+                  Card: {
+                    bodyPadding     : 12,
+                    colorBgContainer: token.colorBgElevated
+                  }
+                }
+              }}
             >
               <Card
-                style={{
-                  background: '#f0f0f0',
-                  color     : '#4E4E4E'
-                }}
+                style={{ color: token.colorText }}
                 title={
                   <Flex
                     gap="8px"
                     align="center"
+                    style={{ color: token.colorText }}
                   >
                     <RobotSVG />
                     <strong>{import.meta.env.VITE_AI_NAME.toUpperCase()}</strong>
@@ -273,7 +305,13 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
             <ConfigProvider
               theme={{
                 token     : { borderRadiusLG: 4 },
-                components: { Collapse: { headerPadding: '10px 10px' } }
+                components: {
+                  Collapse: {
+                    headerPadding   : '10px 10px',
+                    colorBgContainer: token.colorBgElevated,
+                    colorText       : token.colorText
+                  }
+                }
               }}
             >
               <Collapse
@@ -297,11 +335,11 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
             vertical
             gap="8px"
           >
-            <strong>📜 Original Prompt:</strong>
+            <strong style={{ color: token.colorText }}>📜 Original Prompt:</strong>
             <Card
               style={{
-                background: '#f0f0f0',
-                color     : '#4E4E4E',
+                background: token.colorBgElevated,
+                color     : token.colorText,
                 maxHeight : '200px',
                 overflow  : 'auto'
               }}
@@ -313,7 +351,7 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
             vertical
             gap="8px"
           >
-            <strong>🎭 Current Tone:</strong>
+            <strong style={{ color: token.colorText }}>🎭 Current Tone:</strong>
             <Flex
               gap="8px 0"
               wrap
@@ -338,15 +376,17 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
               flexGrow     : 1
             }}
           >
-            <strong>✏️ Suggested Rewrite:</strong>
+            <strong style={{ color: token.colorText }}>✏️ Suggested Rewrite:</strong>
             <TextArea
               rows={2}
               autoSize={true}
               value={currentRewrite}
               style={{
-                flexGrow : 'inherit',
-                minHeight: '100px',
-                maxHeight: '300px'
+                flexGrow  : 'inherit',
+                minHeight : '100px',
+                maxHeight : '300px',
+                background: token.colorBgElevated,
+                color     : token.colorText
               }}
               onChange={e => {
                 dispatch(setRewrittenPrompt(e.target.value));
@@ -358,14 +398,17 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
             justifyContent: 'space-between'
           }}
           >
-            <Tooltip title={
-              'Regenerate suggestions'
-            }
-            >
+            <Tooltip title="Regenerate suggestions">
               <div>
                 <Button
                   type="default"
-                  icon={<SyncOutlined />}
+                  style={{
+                    color       : theme === 'dark' ? blue[0] : blue[6],
+                    background  : theme === 'dark' ? blue[7] : blue[1],
+                    borderColor : theme === 'dark' ? blue[7] : blue[4],
+                    borderRadius: 0
+                  }}
+                  icon={<SyncOutlined style={{ color: getIconColor(!isStale, theme, blue) }}/>}
                   onClick={() => dispatch(regenerateSuggestions())}
                   disabled={!isStale}
                 />
@@ -375,7 +418,13 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
               <div>
                 <Button
                   type="primary"
-                  icon={<ArrowRightOutlined />}
+                  style={{
+                    color       : theme === 'dark' ? green[0] : green[6],
+                    background  : theme === 'dark' ? green[7] : green[1],
+                    borderColor : theme === 'dark' ? green[7] : green[4],
+                    borderRadius: 0
+                  }}
+                  icon={<ArrowRightOutlined style={{ color: getIconColor(!currentRewrite, theme, green) }}/>}
                   onClick={writeTextToInput}
                   disabled={!currentRewrite}
                 />
@@ -383,7 +432,7 @@ const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) =
             </Tooltip>
           </div>
         </Splitter.Panel>
-      </Splitter>
+      </Splitter>}
     </Card>
   );
 };

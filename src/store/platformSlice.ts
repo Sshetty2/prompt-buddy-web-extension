@@ -132,6 +132,8 @@ export const setupInputObserver = (
   const observer = new MutationObserver(() => {
     const newText = config.useInnerHTML ? input.innerHTML : input.textContent;
 
+    console.log('newText', newText);
+
     if (typeof newText === 'string') {
       callback(newText);
     }

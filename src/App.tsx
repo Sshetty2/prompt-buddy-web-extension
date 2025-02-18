@@ -1,26 +1,27 @@
-import { Card, Input } from 'antd';
-import { useEffect, useRef, useState } from 'react';
+import { Card, Input, Button } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import PromptBuddyPopover from './components/PromptBuddyPopover';
 import { setIsPopoverOpen, setIsStale, setOriginalPrompt } from './store/uiSlice';
 import { useDispatch, useSelector } from 'react-redux';
-
 import { RootState } from './store/types';
+import { ThemeProvider, useTheme } from './theme/ThemeContext';
 
 const { TextArea } = Input;
 
-function App () {
+const AppContent = () => {
   const [inputValue, setInputValue] = useState('');
   const dispatch = useDispatch();
   const isPopoverOpen = useSelector((state: RootState) => state.ui.isPopoverOpen);
+  const { theme, toggleTheme } = useTheme();
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.ctrlKey && e.code === 'Space') {
+      e.preventDefault();
+      dispatch(setIsPopoverOpen(!isPopoverOpen));
+    }
+  }, [dispatch, isPopoverOpen]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.code === 'Space') {
-        e.preventDefault();
-        dispatch(setIsPopoverOpen(!isPopoverOpen));
-      }
-    };
-
     document.addEventListener('keydown', handleKeyDown);
 
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -38,7 +39,22 @@ function App () {
     }}
     >
       <Card
-        title="Prompt Buddy"
+        title={
+          <div style={{
+            display       : 'flex',
+            justifyContent: 'space-between',
+            alignItems    : 'center'
+          }}
+          >
+            <span>Prompt Buddy</span>
+            <Button
+              type="text"
+              onClick={toggleTheme}
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </Button>
+          </div>
+        }
         style={{
           width    : '100%',
           height   : '100%',
@@ -67,6 +83,14 @@ function App () {
         </div>
       </Card>
     </main>
+  );
+};
+
+function App () {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

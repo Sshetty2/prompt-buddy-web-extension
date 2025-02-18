@@ -10,6 +10,7 @@ import {
   setupInputObserver,
   PLATFORM_CONFIGS
 } from './store/platformSlice';
+import { ThemeProvider } from './theme/ThemeContext';
 
 const store = createStore();
 
@@ -101,9 +102,11 @@ const wrapInputWithPopover = (input: HTMLElement, platform: AIPlatform) => {
   const render = () => {
     root.render(
       <Provider store={store}>
-        <PromptBuddyPopover
-          input={input}
-        />
+        <ThemeProvider>
+          <PromptBuddyPopover
+            input={input}
+          />
+        </ThemeProvider>
       </Provider>
     );
   };
