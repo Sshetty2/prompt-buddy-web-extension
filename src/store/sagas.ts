@@ -1,10 +1,37 @@
 import { call, put, takeLatest, select } from 'typed-redux-saga';
 import { SagaIterator } from 'redux-saga';
-import { fetchSuggestions, setSuggestions, regenerateSuggestions } from './suggestionsSlice';
-import { setIsLoading, setError, setIsStale, setRewrittenPrompt } from './uiSlice';
-import { RootState } from './types';
+import {
+  fetchSuggestions,
+  setSuggestions,
+  regenerateSuggestions,
+  updateStatus
+} from './suggestionsSlice';
+import {
+  setIsLoading,
+  setError,
+  setIsStale,
+  setRewrittenPrompt
+} from './uiSlice';
+import { RootState, PromptSuggestionsData } from './types';
 
-function* fetchSuggestionsSaga (
+export const fetchFromAPI = async (endpoint: string, body: unknown) => {
+  const response = await fetch(
+    `${import.meta.env.VITE_ENDPOINT_URL}${endpoint}`,
+    {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify(body)
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Request failed (${response.status})`);
+  }
+
+  return response.json();
+};
+
+export function* fetchSuggestionsSaga (
   { payload }: ReturnType<typeof fetchSuggestions>
 ): SagaIterator {
   const isStale = yield* select((state: RootState) => state.ui.isStale);
@@ -17,71 +44,76 @@ function* fetchSuggestionsSaga (
     yield* put(setIsLoading(true));
     yield* put(setError(null));
     yield* put(setRewrittenPrompt(null));
+    yield* put(updateStatus({
+      isStale   : true,
+      error     : null,
+      retryCount: 0
+    }));
 
-    const response = yield* call(
-      fetch,
-      `${import.meta.env.VITE_ENDPOINT_URL}/get-prompt-suggestions`, {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ prompt: payload })
-      }
-    );
-
-    const data = yield* call([response, 'json']);
+    const data: PromptSuggestionsData = yield* call(fetchFromAPI, '/get-prompt-suggestions', { prompt: payload });
 
     yield* put(setSuggestions(data));
-    yield* put(setIsStale(true));
+    yield* put(setIsStale(false));
+    yield* put(updateStatus({
+      isStale  : false,
+      lastFetch: Date.now()
+    }));
   } catch (error) {
-    if (error instanceof Error) {
-      yield* put(setError(`${error.name}; ${error.message}`));
-    } else {
-      yield* put(setError('Failed to generate suggestions. Contact support if this persists.'));
-    }
+    const message = error instanceof Error ? error.message : 'Failed to generate suggestions';
+    yield* put(setError(message));
+    yield* put(updateStatus({
+      error     : message,
+      retryCount: (yield* select((state: RootState) => state.suggestions.status.retryCount)) + 1
+    }));
   } finally {
     yield* put(setIsLoading(false));
   }
 }
 
-function* regenerateSuggestionsSaga (): SagaIterator {
+export function* regenerateSuggestionsSaga (): SagaIterator {
   try {
-    const rewrittenPrompt = yield* select((state: RootState) => state.ui.rewrittenPrompt);
-    const currentSuggestions = yield* select((state: RootState) => state.suggestions.suggestions);
+    const originalPrompt = yield* select((state: RootState) => state.ui.originalPrompt);
+
+    const categories = yield* select((state: RootState) => state.suggestions.categories);
+
+    // Get selected suggestions from categories
+    const selectedSuggestions = Object.entries(categories)
+      .reduce((acc, [category, data]) => {
+        if (data.selected.length > 0) {
+          acc[category] = data.selected;
+        }
+
+        return acc;
+      }, {} as Record<string, string[]>);
 
     yield* put(setIsLoading(true));
     yield* put(setError(null));
+    yield* put(updateStatus({
+      isStale   : true,
+      error     : null,
+      retryCount: 0
+    }));
 
-    const response = yield* call(
-      fetch,
-      `${import.meta.env.VITE_ENDPOINT_URL}/get-prompt-suggestions`, {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({
-          prompt             : rewrittenPrompt,
-          selectedSuggestions: currentSuggestions
-        })
-      }
-    );
+    const data: PromptSuggestionsData = yield* call(fetchFromAPI, '/get-prompt-suggestions', {
+      prompt: originalPrompt,
+      selectedSuggestions
+    });
 
-    const data = yield* call([response, 'json']);
-
-    if (response.status !== 200) {
-      if (data.error) {
-        yield* put(setError(`status: ${response.status}, error: ${data.error}`));
-      } else {
-        yield* put(setError(`status: ${response.status}, Failed to generate suggestions`));
-      }
-    }
-
-    yield* put(setIsStale(true));
     yield* put(setSuggestions(data));
+    yield* put(setIsStale(false));
+    yield* put(updateStatus({
+      isStale  : false,
+      lastFetch: Date.now()
+    }));
   } catch (error) {
-    if (error instanceof Error) {
-      yield* put(setError(`${error.name}; ${error.message}`));
-    } else {
-      yield* put(setError('Failed to generate suggestions. Contact support if this persists.'));
-    }
+    const message = error instanceof Error ? error.message : 'Failed to regenerate suggestions';
+    yield* put(setError(message));
+    yield* put(updateStatus({
+      error     : message,
+      retryCount: (yield* select((state: RootState) => state.suggestions.status.retryCount)) + 1
+    }));
   } finally {
-    yield* put(setIsLoading(true));
+    yield* put(setIsLoading(false));
   }
 }
 

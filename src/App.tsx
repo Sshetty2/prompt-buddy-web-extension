@@ -1,8 +1,9 @@
 import { Card, Input } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import PromptBuddyPopover from './components/PromptBuddyPopover';
-import { setIsPopoverOpen, setIsStale } from './store/uiSlice';
+import { setIsPopoverOpen, setIsStale, setOriginalPrompt } from './store/uiSlice';
 import { useDispatch, useSelector } from 'react-redux';
+
 import { RootState } from './store/types';
 
 const { TextArea } = Input;
@@ -31,7 +32,7 @@ function App () {
   return (
     <main style={{
       boxSizing: 'border-box',
-      position : 'fixed',
+      position : import.meta.env.DEV ? 'relative' : 'fixed',
       top      : 0,
       left     : 0
     }}
@@ -54,6 +55,7 @@ function App () {
             onChange={e => {
               dispatch(setIsStale(true));
               setInputValue(e.target.value);
+              dispatch(setOriginalPrompt(e.target.value));
             }}
             placeholder="Type your prompt here... (Ctrl+Space to toggle helper)"
             style={{ marginTop: '20px' }}

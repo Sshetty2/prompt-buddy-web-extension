@@ -8,20 +8,13 @@ export enum ESuggestionCategory {
 }
 
 type SuggestionCategory = Record<ESuggestionCategory, string[] | null>;
-
 type SuggestionCategorySelected = Record<ESuggestionCategory, string[]>;
-
-export interface PromptSuggestionsData {
-  suggestions: SuggestionCategory;
-  current_tone: ECurrentTone[];
-  summary: string;
-  rewrite: string;
-}
 
 // eslint-disable-next-line no-shadow
 export enum ECurrentTone {
   formal = 'formal',
   informal = 'informal',
+  inquisitive = 'inquisitive',
   technical = 'technical',
   casual = 'casual',
   confused = 'confused',
@@ -30,6 +23,14 @@ export enum ECurrentTone {
   professional = 'professional',
   academic = 'academic',
   curious = 'curious'
+}
+
+// API Response type
+export interface PromptSuggestionsData {
+  suggestions: SuggestionCategory;
+  current_tone: ECurrentTone[];
+  summary: string;
+  rewrite: string;
 }
 
 export interface UIState {
@@ -45,9 +46,48 @@ export interface UIState {
   platformConfig: PlatformConfig | null;
 }
 
+export interface NewSuggestionState {
+  categories: Record<ESuggestionCategory, {
+    available: string[] | null;
+    selected: string[];
+    lastUpdated: number;
+  }>;
+  analysis: {
+    tones: ECurrentTone[];
+    summary: string;
+    confidence: number;
+  };
+  status: {
+    isStale: boolean;
+    lastFetch: number;
+    retryCount: number;
+    error: string | null;
+  };
+}
+
+export interface PlatformState {
+  config: {
+    current: PlatformConfig | null;
+    isInitialized: boolean;
+    lastInitAttempt: number;
+  };
+  input: {
+    elementSelector: string;
+    lastUpdate: number;
+  };
+  shortcuts: {
+    enabled: boolean;
+    bindings: {
+      togglePopover: string[];
+      applyChanges: string[];
+    };
+  };
+}
+
 export interface RootState {
-  suggestions: PromptSuggestionsData;
+  suggestions: NewSuggestionState;
   ui: UIState;
+  platform: PlatformState;
 }
 
 export interface PlatformConfig {
@@ -62,3 +102,30 @@ export enum AIPlatform {
   PERPLEXITY = 'perplexity.ai'
 }
 
+export interface ErrorState {
+  code: string;
+  message: string;
+  timestamp: number;
+  context?: {
+    action: string;
+    params?: Record<string, unknown>;
+  };
+}
+
+export interface BatchUpdatePayload {
+  suggestions?: Partial<NewSuggestionState>;
+  status?: Partial<NewSuggestionState['status']>;
+}
+
+export type PromptSource = 'user' | 'ai' | 'suggestion';
+
+export interface PromptUpdatePayload {
+  text: string;
+  source: PromptSource;
+  timestamp: number;
+}
+
+export interface DOMRefs {
+  inputElement: HTMLElement | null;
+  observer: MutationObserver | null;
+}

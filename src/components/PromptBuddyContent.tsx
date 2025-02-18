@@ -1,5 +1,4 @@
-import { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useCallback, FC } from 'react';
 import {
   Card,
   Button,
@@ -14,10 +13,24 @@ import {
   Checkbox,
   Alert
 } from 'antd';
-import { SettingOutlined, CloseOutlined, SyncOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import { ECurrentTone, ESuggestionCategory, RootState } from '../store/types';
-import { setIsPopoverOpen, setRewrittenPrompt, setSelectedSuggestions } from '../store/uiSlice';
+import {
+  SettingOutlined,
+  CloseOutlined,
+  SyncOutlined,
+  ArrowRightOutlined
+} from '@ant-design/icons';
+import { ECurrentTone, ESuggestionCategory } from '../store/types';
+import {
+  setIsPopoverOpen,
+  setRewrittenPrompt,
+  setSelectedSuggestions
+} from '../store/uiSlice';
 import { regenerateSuggestions } from '../store/suggestionsSlice';
+import {
+  useAppDispatch,
+  useAppSelector,
+  useSuggestionState
+} from '../store/hooks';
 import RobotSVG from './RobotSVG';
 
 const { TextArea } = Input;
@@ -27,6 +40,7 @@ const TONE_COLORS: Record<ECurrentTone, string> = {
   [ECurrentTone.informal]    : 'cyan',
   [ECurrentTone.technical]   : 'purple',
   [ECurrentTone.casual]      : 'blue',
+  [ECurrentTone.inquisitive] : 'gold',
   [ECurrentTone.confused]    : 'orange',
   [ECurrentTone.aggressive]  : 'red',
   [ECurrentTone.friendly]    : 'green',
@@ -35,58 +49,140 @@ const TONE_COLORS: Record<ECurrentTone, string> = {
   [ECurrentTone.curious]     : 'gold'
 };
 
-const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void }) => {
-  const dispatch = useDispatch();
+interface SuggestionItemProps {
+  suggestion: string;
+  index: number;
+  category: ESuggestionCategory;
+  isSelected: boolean;
+  onSelect: (checked: boolean) => void;
+}
 
-  const isStale = useSelector((state: RootState) => state.ui.isStale);
-  const data = useSelector((state: RootState) => state.suggestions);
-  const rewrittenPrompt = useSelector((state: RootState) => state.ui.rewrittenPrompt);
-  const firstRewrite = useSelector((state: RootState) => state.ui.firstRewrite);
-  const error = useSelector((state: RootState) => state.ui.error);
-  const originalPrompt = useSelector((state: RootState) => state.ui.originalPrompt);
+const SuggestionItemComponent: FC<SuggestionItemProps> = ({
+  suggestion,
+  index,
 
-  const { suggestions, summary, current_tone } = data;
+  // category,
+  isSelected,
+  onSelect
+}) => (
+  <ul
+    key={index}
+    style={{
+      display           : 'flex',
+      alignItems        : 'center',
+      gap               : '8px',
+      paddingInlineStart: '16px'
+    }}
+  >
+    <li>{suggestion}</li>
+    <Checkbox
+      style={{
+        marginBottom: 'auto',
+        marginLeft  : 'auto',
+        top         : '5px',
+        position    : 'relative'
+      }}
+      checked={isSelected}
+      onChange={e => onSelect(e.target.checked)}
+    />
+  </ul>
+);
 
-  const buildCollapseItems = useCallback(() => Object.entries(suggestions).map((
-    [category, items]
-  ) => (items && items.length > 0 ? {
-    key     : category,
-    label   : category.charAt(0).toUpperCase() + category.slice(1),
-    children: items?.map((suggestion: string, index: number) => (
-      <ul
-        key={index}
-        style={{
-          display           : 'flex',
-          alignItems        : 'center',
-          gap               : '8px',
-          paddingInlineStart: '16px'
-        }}
-      >
-        <li>{suggestion}</li>
-        <Checkbox
-          style={{
-            marginBottom: 'auto',
-            marginLeft  : 'auto',
-            top         : '5px',
-            position    : 'relative'
-          }}
-          onChange={e => dispatch(setSelectedSuggestions({
-            category     : category as ESuggestionCategory,
-            suggestionIdx: index,
-            value        : e.target.checked
-          }))}
-        />
-      </ul>
-    ))
-  } : null))
-    .filter(item => item !== null),
-  [dispatch, suggestions]);
+interface PromptBuddyContentProps {
+  writeTextToInput: () => void;
+}
 
-  if (!data) {
+const PromptBuddyContent: FC<PromptBuddyContentProps> = ({ writeTextToInput }) => {
+  const dispatch = useAppDispatch();
+
+  // Use UI state
+  const {
+    isStale,
+    rewrittenPrompt,
+    firstRewrite,
+    error: uiError,
+    originalPrompt
+  } = useAppSelector(state => state.ui);
+
+  // Use suggestion state
+  const { categories, analysis, status } = useSuggestionState();
+  const suggestionsSelected = useAppSelector(state => state.ui.suggestionsSelected);
+
+  const handleSuggestionSelect = useCallback(
+    (category: ESuggestionCategory, index: number, value: boolean) => {
+      dispatch(
+        setSelectedSuggestions({
+          category,
+          suggestionIdx: index,
+          value
+        })
+      );
+    },
+    [dispatch]
+  );
+
+  const buildCollapseItems = useCallback(() => {
+    type CollapseItem = {
+      key: string;
+      label: string;
+      children: JSX.Element[];
+    };
+
+    const isValidItem = (item: CollapseItem | null): item is CollapseItem => item !== null;
+
+    const buildCollapseItem = (
+      [category, data]: [string, typeof categories[ESuggestionCategory]]
+    ): CollapseItem | null => {
+      const { available } = data;
+
+      if (!available?.length) {
+        return null;
+      }
+
+      const categoryType = category as ESuggestionCategory;
+      const label = category.charAt(0).toUpperCase() + category.slice(1);
+
+      const renderSuggestion = (suggestion: string, index: number) => {
+        const isSelected = suggestionsSelected[categoryType].includes(suggestion);
+
+        const handleSelect = (checked: boolean) => {
+          handleSuggestionSelect(categoryType, index, checked);
+        };
+
+        return (
+          <SuggestionItemComponent
+            key={`${category}-${index}`}
+            suggestion={suggestion}
+            index={index}
+            category={categoryType}
+            isSelected={isSelected}
+            onSelect={handleSelect}
+          />
+        );
+      };
+
+      return {
+        key     : category,
+        label,
+        children: available.map(renderSuggestion)
+      };
+    };
+
+    return Object.entries(categories)
+      .map(buildCollapseItem)
+      .filter(isValidItem);
+  }, [categories, handleSuggestionSelect, suggestionsSelected]);
+
+  // Don't render if no data or platform config
+  if (!categories) {
     return null;
   }
 
-  // TODO: Split component tree
+  const currentError = uiError || status.error;
+
+  // Use the rewritten prompt if available, otherwise fall back to first rewrite
+  const currentRewrite = rewrittenPrompt ?? firstRewrite;
+
   return (
     <Card
       size="small"
@@ -117,9 +213,9 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
         </Space>
       }
     >
-      {error && (
+      {currentError && (
         <Alert
-          message={error}
+          message={currentError}
           banner
           closable
           type="error"
@@ -127,7 +223,7 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
         />
       )}
 
-      {originalPrompt === '' && (
+      {!originalPrompt && (
         <Alert
           message="No prompt provided. Please enter a prompt to get started."
           banner
@@ -153,23 +249,27 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
             vertical
             gap="12px"
           >
-            <Card
-              style={{
-                background: '#f0f0f0',
-                color     : '#4E4E4E'
-              }}
-              title={
-                <Flex
-                  gap="8px"
-                  align="center"
-                >
-                  <RobotSVG />
-                  <strong>{import.meta.env.VITE_AI_NAME}</strong>
-                </Flex>
-              }
+            <ConfigProvider
+              theme={{ components: { Card: { bodyPadding: 12 } } }}
             >
-              {summary}
-            </Card>
+              <Card
+                style={{
+                  background: '#f0f0f0',
+                  color     : '#4E4E4E'
+                }}
+                title={
+                  <Flex
+                    gap="8px"
+                    align="center"
+                  >
+                    <RobotSVG />
+                    <strong>{import.meta.env.VITE_AI_NAME.toUpperCase()}</strong>
+                  </Flex>
+                }
+              >
+                {analysis.summary}
+              </Card>
+            </ConfigProvider>
             <ConfigProvider
               theme={{
                 token     : { borderRadiusLG: 4 },
@@ -182,30 +282,32 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
               />
             </ConfigProvider>
           </Flex>
-
         </Splitter.Panel>
+
         {/* Right Panel */}
-        <Splitter.Panel style={{
-          paddingLeft  : '10px',
-          gap          : '10px',
-          display      : 'flex',
-          flexDirection: 'column'
-        }}
+        <Splitter.Panel
+          style={{
+            paddingLeft  : '10px',
+            gap          : '10px',
+            display      : 'flex',
+            flexDirection: 'column'
+          }}
         >
           <Flex
             vertical
             gap="8px"
           >
             <strong>📜 Original Prompt:</strong>
-            <Card style={{
-              background: '#f0f0f0',
-              color     : '#4E4E4E',
-              maxHeight : '200px',
-              overflow  : 'auto'
-            }}
+            <Card
+              style={{
+                background: '#f0f0f0',
+                color     : '#4E4E4E',
+                maxHeight : '200px',
+                overflow  : 'auto'
+              }}
             >
               {originalPrompt}
-            </Card >
+            </Card>
           </Flex>
           <Flex
             vertical
@@ -216,7 +318,7 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
               gap="8px 0"
               wrap
             >
-              {current_tone.map(tag => (
+              {analysis.tones.map((tag: ECurrentTone) => (
                 <Tag
                   style={{ marginInlineEnd: '6px' }}
                   key={tag}
@@ -227,20 +329,20 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
               ))}
             </Flex>
           </Flex>
-          <div style={{
-            display      : 'flex',
-            flexDirection: 'column',
-            gap          : '8px',
-            marginBottom : 'auto',
-            flexGrow     : 1
-          }}
+          <div
+            style={{
+              display      : 'flex',
+              flexDirection: 'column',
+              gap          : '8px',
+              marginBottom : 'auto',
+              flexGrow     : 1
+            }}
           >
             <strong>✏️ Suggested Rewrite:</strong>
             <TextArea
               rows={2}
               autoSize={true}
-              // eslint-disable-next-line no-eq-null
-              value={rewrittenPrompt != null ? rewrittenPrompt : firstRewrite}
+              value={currentRewrite}
               style={{
                 flexGrow : 'inherit',
                 minHeight: '100px',
@@ -256,13 +358,16 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
             justifyContent: 'space-between'
           }}
           >
-            <Tooltip title="Regenerate Suggestions">
+            <Tooltip title={
+              'Regenerate suggestions'
+            }
+            >
               <div>
                 <Button
                   type="default"
                   icon={<SyncOutlined />}
                   onClick={() => dispatch(regenerateSuggestions())}
-                  disabled={isStale}
+                  disabled={!isStale}
                 />
               </div>
             </Tooltip>
@@ -271,7 +376,8 @@ const PromptBuddyContent = ({ writeTextToInput }: { writeTextToInput: () => void
                 <Button
                   type="primary"
                   icon={<ArrowRightOutlined />}
-                  onClick={()=> writeTextToInput()}
+                  onClick={writeTextToInput}
+                  disabled={!currentRewrite}
                 />
               </div>
             </Tooltip>

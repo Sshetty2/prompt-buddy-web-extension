@@ -1,15 +1,19 @@
 /* eslint-disable max-len */
+import { FC, MouseEvent } from 'react';
 import { Tooltip } from 'antd';
-import { useDispatch, useSelector } from 'react-redux';
 import { setIsPopoverOpen } from '../store/uiSlice';
-import { RootState } from '../store/types';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 
-const IconSvg = () => (
+interface IconSvgProps {
+  className?: string;
+}
+
+const IconSvg: FC<IconSvgProps> = ({ className = 'prompt-buddy-svg' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="20"
     height="20"
-    className="bi bi-robot prompt-buddy-svg"
+    className={`bi bi-robot ${className}`}
     viewBox="0 0 20 20"
   >
     <defs>
@@ -41,11 +45,11 @@ const IconSvg = () => (
   </svg>
 );
 
-const PromptBuddyIcon = () => {
-  const dispatch = useDispatch();
-  const isPopoverOpen = useSelector((state: RootState) => state.ui.isPopoverOpen);
+const PromptBuddyIcon: FC = () => {
+  const dispatch = useAppDispatch();
+  const isPopoverOpen = useAppSelector(state => state.ui.isPopoverOpen);
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
     dispatch(setIsPopoverOpen(!isPopoverOpen));

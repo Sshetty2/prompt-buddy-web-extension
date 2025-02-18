@@ -1,24 +1,15 @@
 import ReactDOM from 'react-dom/client';
 import PromptBuddyPopover from './components/PromptBuddyPopover';
 import { Provider } from 'react-redux';
-import { setIsPopoverOpen, setOriginalPrompt, setPlatformConfig } from './store/uiSlice';
+import { setIsPopoverOpen, setOriginalPrompt } from './store/uiSlice';
 import { createStore } from './store/createStore';
-import { AIPlatform, PlatformConfig } from './store/types';
-
-const PLATFORM_CONFIGS: Record<AIPlatform, PlatformConfig> = {
-  [AIPlatform.CHATGPT]: {
-    selector    : '#prompt-textarea',
-    useInnerHTML: false
-  },
-  [AIPlatform.CLAUDE]: {
-    selector    : '[aria-label="Write your prompt to Claude"]',
-    useInnerHTML: false
-  },
-  [AIPlatform.PERPLEXITY]: {
-    selector    : 'textarea',
-    useInnerHTML: true
-  }
-};
+import { AIPlatform } from './store/types';
+import {
+  getCurrentPlatform,
+  initializePlatform,
+  setupInputObserver,
+  PLATFORM_CONFIGS
+} from './store/platformSlice';
 
 const store = createStore();
 
@@ -75,44 +66,37 @@ const waitForElement = (selector: string, timeout = 10000): Promise<HTMLElement>
   });
 };
 
-const getCurrentPlatform = (): PlatformConfig | null => {
-  const host = window.location.host;
-  const platform = Object.keys(PLATFORM_CONFIGS).find(p => host.includes(p));
-
-  return platform ? PLATFORM_CONFIGS[platform as AIPlatform] : null;
-};
-
-const wrapInputWithPopover = (input: HTMLElement, platformConfig: PlatformConfig) => {
+const wrapInputWithPopover = (input: HTMLElement, platform: AIPlatform) => {
   const wrapper = document.createElement('div');
   wrapper.style.display = 'contents';
   wrapper.style.width = '100%';
 
   input?.parentNode?.appendChild(wrapper);
 
-  const observer = new MutationObserver(() => {
-    const newText = platformConfig.useInnerHTML ? input.innerHTML : input.textContent;
+  // Initialize platform state
+  store.dispatch(initializePlatform({
+    platform,
+    elementSelector: PLATFORM_CONFIGS[platform].selector
+  }));
 
-    if (newText || newText === '') {
+  // Set up observer using our platform utilities
+  setupInputObserver(
+    input,
+    PLATFORM_CONFIGS[platform],
+    (newText: string) => {
       store.dispatch(setOriginalPrompt(newText));
     }
-  });
-
-  observer.observe(input, {
-    characterData: true,
-    childList    : true,
-    subtree      : true
-  });
+  );
 
   const root = ReactDOM.createRoot(wrapper);
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.ctrlKey && e.code === 'Space') {
       e.preventDefault();
+
       store.dispatch(setIsPopoverOpen(true));
     }
   };
-
-  store.dispatch(setPlatformConfig(platformConfig));
 
   const render = () => {
     root.render(
@@ -126,29 +110,39 @@ const wrapInputWithPopover = (input: HTMLElement, platformConfig: PlatformConfig
 
   document.addEventListener('keydown', handleKeyDown);
   render();
+
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+  };
 };
 
 const initializePromptBuddy = async () => {
   try {
     await waitForWindow();
 
-    const platformConfig = getCurrentPlatform();
+    const platform = getCurrentPlatform();
 
-    if (!platformConfig) {
+    if (!platform) {
+      console.warn('No supported platform found');
+
       return;
     }
 
-    const input = await waitForElement(platformConfig.selector);
-    wrapInputWithPopover(input, platformConfig);
+    const config = PLATFORM_CONFIGS[platform];
+    const input = await waitForElement(config.selector);
+
+    wrapInputWithPopover(input, platform);
   } catch (error) {
     console.error('Failed to initialize PromptBuddy:', error);
   }
 };
 
+// Handle extension messages
 chrome.runtime.onMessage.addListener(message => {
   if (message.type === 'PAGE_RELOADED') {
     initializePromptBuddy();
   }
 });
 
+// Initial initialization
 initializePromptBuddy();
